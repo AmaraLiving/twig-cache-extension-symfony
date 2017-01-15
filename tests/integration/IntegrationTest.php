@@ -61,9 +61,19 @@ class IntegrationTest extends PHPUnit_Framework_TestCase {
 				return false;
 			}
 
-			// todo: assert expiresAt via reflection
-			// todo: assert tags via reflection
+			// We need to inspect the expiry time via reflection as there seems
+			// to be no getter
+			$expiry = PHPUnit_Framework_Assert::readAttribute($cacheItemToSave, 'expiry');
+			$expected = time() + 900;
+			$toleranceInSeconds = 30;
+			PHPUnit_Framework_Assert::assertTrue(abs($expected - $expiry) < $toleranceInSeconds);
 
+			// Similarly for tags, we inspect them with reflection
+			PHPUnit_Framework_Assert::assertAttributeEquals(
+				['tag1' => 'tag1', 'tag2' => 'tag2'],
+				'tags',
+				$cacheItemToSave
+			);
 			PHPUnit_Framework_Assert::assertEquals('example-item', $cacheItemToSave->getKey());
 			PHPUnit_Framework_Assert::assertEquals('The content to cache', $cacheItemToSave->get());
 
