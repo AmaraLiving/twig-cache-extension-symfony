@@ -4,6 +4,8 @@ Twig cache extension / Symfony cache bridge
 Tiny library to allow use of tagging cache items from the [Symfony2 cache component](https://github.com/symfony/cache) with 
 the [twig cache extension](https://github.com/asm89/twig-cache-extension).
 
+It has a `SymfonyTaggedCacheStrategy` which accepts tags.
+
 ```php
 <?php
 
