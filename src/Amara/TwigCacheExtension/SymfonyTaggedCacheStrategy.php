@@ -18,101 +18,110 @@ use Symfony\Component\Cache\CacheItem;
 /**
  * SymfonyTaggedCacheStrategy
  */
-class SymfonyTaggedCacheStrategy implements CacheStrategyInterface {
-	/**
-	 * @var AdapterInterface
-	 */
-	private $adapter;
+class SymfonyTaggedCacheStrategy implements CacheStrategyInterface
+{
+    /**
+     * @var AdapterInterface
+     */
+    private $adapter;
 
-	/**
-	 * @var string
-	 */
-	private $keyTemplate = '__SF2__%s';
+    /**
+     * @var string
+     */
+    private $keyTemplate = '__SF2__%s';
 
-	/**
-	 * @param AdapterInterface $adapter
-	 */
-	public function __construct(AdapterInterface $adapter) {
-		$this->adapter = $adapter;
-	}
+    /**
+     * @param AdapterInterface $adapter
+     */
+    public function __construct(AdapterInterface $adapter)
+    {
+        $this->adapter = $adapter;
+    }
 
-	/**
-	 * @return AdapterInterface
-	 */
-	public function getAdapter() {
-		return $this->adapter;
-	}
+    /**
+     * @return AdapterInterface
+     */
+    public function getAdapter()
+    {
+        return $this->adapter;
+    }
 
-	/**
-	 * @param AdapterInterface $adapter
-	 */
-	public function setAdapter($adapter) {
-		$this->adapter = $adapter;
-	}
+    /**
+     * @param AdapterInterface $adapter
+     */
+    public function setAdapter($adapter)
+    {
+        $this->adapter = $adapter;
+    }
 
-	/**
-	 * @return string
-	 */
-	public function getKeyTemplate() {
-		return $this->keyTemplate;
-	}
+    /**
+     * @return string
+     */
+    public function getKeyTemplate()
+    {
+        return $this->keyTemplate;
+    }
 
-	/**
-	 * @param string $keyTemplate
-	 */
-	public function setKeyTemplate($keyTemplate) {
-		$this->keyTemplate = $keyTemplate;
-	}
+    /**
+     * @param string $keyTemplate
+     */
+    public function setKeyTemplate($keyTemplate)
+    {
+        $this->keyTemplate = $keyTemplate;
+    }
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function fetchBlock($key) {
-		if (!$key instanceof KeyModel) {
-			throw new InvalidValueException('Key should have been a KeyModel');
-		}
+    /**
+     * {@inheritdoc}
+     */
+    public function fetchBlock($key)
+    {
+        if (!$key instanceof KeyModel) {
+            throw new InvalidValueException('Key should have been a KeyModel');
+        }
 
-		$item = $this->adapter->getItem($key->key);
+        $item = $this->adapter->getItem($key->key);
 
-		if ($item->isHit()) {
-			return $item->get();
-		}
+        if ($item->isHit()) {
+            return $item->get();
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function generateKey($annotation, $value) {
-		if (!is_array($value)) {
-			throw new InvalidValueException('Cache value must be an array');
-		}
+    /**
+     * {@inheritdoc}
+     */
+    public function generateKey($annotation, $value)
+    {
+        if (!is_array($value)) {
+            throw new InvalidValueException('Cache value must be an array');
+        }
 
-		$lifetime = isset($value['lifetime']) ? $value['lifetime'] : 0;
-		$tags = isset($value['tags']) ? $value['tags'] : [];
-		$key = sprintf($this->keyTemplate, $annotation);
+        $lifetime = isset($value['lifetime']) ? $value['lifetime'] : 0;
+        $tags = isset($value['tags']) ? $value['tags'] : [];
+        $key = sprintf($this->keyTemplate, $annotation);
 
-		return new KeyModel($key, $lifetime, $tags);
-	}
+        return new KeyModel($key, $lifetime, $tags);
+    }
 
-	/**
-	 * {@inheritdoc}
-	 */
-	public function saveBlock($key, $block) {
-		if (!$key instanceof KeyModel) {
-			throw new InvalidValueException('Key should have been a KeyModel');
-		}
+    /**
+     * {@inheritdoc}
+     */
+    public function saveBlock($key, $block)
+    {
+        if (!$key instanceof KeyModel) {
+            throw new InvalidValueException('Key should have been a KeyModel');
+        }
 
-		$item = $this->adapter->getItem($key->key);
+        $item = $this->adapter->getItem($key->key);
 
-		$item->set($block);
-		$item->expiresAfter($key->lifetime);
+        $item->set($block);
+        $item->expiresAfter($key->lifetime);
 
-		if ($item instanceof CacheItem) {
-			$item->tag($key->tags);
-		}
+        if ($item instanceof CacheItem) {
+            $item->tag($key->tags);
+        }
 
-		$this->adapter->save($item);
-	}
+        $this->adapter->save($item);
+    }
 }
