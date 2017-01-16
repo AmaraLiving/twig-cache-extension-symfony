@@ -79,9 +79,9 @@ class SymfonyTaggedCacheStrategyTest extends PHPUnit_Framework_TestCase
         $cacheContent = 'My cached content';
         $cacheCreateFunction = $this->createCacheCreateFunction();
 
-        $cacheItemMock = $cacheCreateFunction('key', $cacheContent, false);
+        $cacheItem = $cacheCreateFunction('key', $cacheContent, false);
 
-        $this->adapterMock->getItem('key')->willReturn($cacheItemMock);
+        $this->adapterMock->getItem('key')->willReturn($cacheItem);
 
         $actual = $this->symfonyTaggedCacheStrategy->fetchBlock($key);
 
@@ -118,6 +118,55 @@ class SymfonyTaggedCacheStrategyTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(23, $keyModel->lifetime);
         $this->assertEquals(['a', 'b'], $keyModel->tags);
         $this->assertEquals('__SF2__annotation', $keyModel->key);
+    }
+
+    public function testSaveBlockThrowsExceptionWhenNonKeyModelPassed()
+    {
+        $this->setExpectedException(InvalidValueException::class);
+
+        $this->symfonyTaggedCacheStrategy->saveBlock('not a key model', 'Content to cache');
+    }
+
+    public function testSaveBlockWithPsrCacheItemInterface()
+    {
+        $block = 'Content to cache';
+        $lifetime = 23;
+
+        $keyModel = new KeyModel('key', $lifetime);
+
+        $cacheItemPsr = $this->prophesize(\Psr\Cache\CacheItemInterface::class);
+        $cacheItemPsr->set($block)->shouldBeCalled();
+        $cacheItemPsr->expiresAfter($lifetime)->shouldBeCalled();
+
+        $this->adapterMock->getItem('key')->willReturn($cacheItemPsr);
+
+        $this->adapterMock->save($cacheItemPsr)->shouldBeCalled();
+
+        $this->symfonyTaggedCacheStrategy->saveBlock($keyModel, $block);
+    }
+
+    public function testSaveBlockWithCacheItem()
+    {
+        $block = 'Content to cache';
+        $lifetime = 23;
+        $cacheCreateFunction = $this->createCacheCreateFunction();
+
+        // CacheItem is final, so we cannot prophesize it
+        $cacheItem = $cacheCreateFunction('key', '', false);
+
+        $keyModel = new KeyModel('key', $lifetime, ['tag1', 'tag2']);
+
+        $this->adapterMock->getItem('key')->willReturn($cacheItem);
+        $this->adapterMock->save($cacheItem)->shouldBeCalled();
+
+        $this->symfonyTaggedCacheStrategy->saveBlock($keyModel, $block);
+
+        // We just check the tags, we assume that the others are okay from the PSR cache item test
+        PHPUnit_Framework_Assert::assertAttributeEquals(
+            ['tag1' => 'tag1', 'tag2' => 'tag2'],
+            'tags',
+            $cacheItem
+        );
     }
 
     /**
