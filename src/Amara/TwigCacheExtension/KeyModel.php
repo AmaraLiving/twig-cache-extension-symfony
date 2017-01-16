@@ -34,9 +34,9 @@ class KeyModel
     /**
      * @param string $key
      * @param int $lifetime
-     * @param \string[] $tags
+     * @param string[] $tags
      */
-    public function __construct($key, $lifetime, array $tags)
+    public function __construct($key, $lifetime = null, array $tags = [])
     {
         $this->key = $key;
         $this->lifetime = $lifetime;
