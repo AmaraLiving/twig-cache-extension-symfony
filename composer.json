@@ -1,5 +1,6 @@
 {
   "name": "amara/twig-cache-extension-symfony",
+  "license": "MIT",
   "require": {
     "php": ">=5.5.0,<8.0",
     "asm89/twig-cache-extension": "^1.3",
