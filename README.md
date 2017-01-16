@@ -1,6 +1,9 @@
 Twig cache extension / Symfony cache bridge
 ===========================================
 
+[![Build Status](https://travis-ci.org/AmaraLiving/twig-cache-extension-symfony.svg?branch=master)](https://travis-ci.org/AmaraLiving/twig-cache-extension-symfony)
+[![Coverage Status](https://coveralls.io/repos/github/AmaraLiving/twig-cache-extension-symfony/badge.svg?branch=master)](https://coveralls.io/github/AmaraLiving/twig-cache-extension-symfony?branch=master)
+
 Tiny library to allow use of tagging cache items from the [Symfony2 cache component](https://github.com/symfony/cache) with 
 the [twig cache extension](https://github.com/asm89/twig-cache-extension).
 
