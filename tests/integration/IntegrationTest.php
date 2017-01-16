@@ -8,104 +8,114 @@ use Symfony\Component\Cache\CacheItem;
 /**
  * IntegrationTest
  */
-class IntegrationTest extends PHPUnit_Framework_TestCase {
-	public function testDisplaysCachedContentWhenPresentInCache()
-	{
-		$createCacheItemFunction = $this->createCacheCreateFunction();
+class IntegrationTest extends PHPUnit_Framework_TestCase
+{
+    public function testDisplaysCachedContentWhenPresentInCache()
+    {
+        $createCacheItemFunction = $this->createCacheCreateFunction();
 
-		$loader = new Twig_Loader_Array(array(
-			'index' => "
+        $loader = new Twig_Loader_Array(
+            [
+                'index' => "
 				{%- cache 'example-item' {lifetime:900, tags: ['tag1', 'tag2']} -%}
 					The content to cache
 				{%- endcache -%}
 			",
-		));
-		$twig = new Twig_Environment($loader);
+            ]
+        );
+        $twig = new Twig_Environment($loader);
 
-		$cachedContent = 'Already cached content';
+        $cachedContent = 'Already cached content';
 
-		$cacheItem = $createCacheItemFunction('example-item', $cachedContent, true);
+        $cacheItem = $createCacheItemFunction('example-item', $cachedContent, true);
 
-		$tagAwareAdapter = $this->prophesize(TagAwareAdapterInterface::class);
-		$tagAwareAdapter->getItem('__SF2__example-item')->willReturn($cacheItem);
+        $tagAwareAdapter = $this->prophesize(TagAwareAdapterInterface::class);
+        $tagAwareAdapter->getItem('__SF2__example-item')->willReturn($cacheItem);
 
-		$cacheStrategy  = new SymfonyTaggedCacheStrategy($tagAwareAdapter->reveal());
-		$cacheExtension = new Extension($cacheStrategy);
+        $cacheStrategy = new SymfonyTaggedCacheStrategy($tagAwareAdapter->reveal());
+        $cacheExtension = new Extension($cacheStrategy);
 
-		$twig->addExtension($cacheExtension);
+        $twig->addExtension($cacheExtension);
 
-		$actualContent = $twig->render('index');
+        $actualContent = $twig->render('index');
 
-		$this->assertEquals($actualContent, $cachedContent);
-	}
+        $this->assertEquals($actualContent, $cachedContent);
+    }
 
-	public function testDisplaysAndSavesNotCachedContent()
-	{
-		$createCacheItem = $this->createCacheCreateFunction();
+    public function testDisplaysAndSavesNotCachedContent()
+    {
+        $createCacheItem = $this->createCacheCreateFunction();
 
-		$loader = new Twig_Loader_Array(array(
-			'index' => "
+        $loader = new Twig_Loader_Array(
+            [
+                'index' => "
 				{%- cache 'example-item' {lifetime:900, tags: ['tag1', 'tag2']} -%}
 					The content to cache
 				{%- endcache -%}
 			",
-		));
-		$twig = new Twig_Environment($loader);
+            ]
+        );
+        $twig = new Twig_Environment($loader);
 
-		$cacheItemNoHit = $createCacheItem('example-item', 'Nothing here', false);
+        $cacheItemNoHit = $createCacheItem('example-item', 'Nothing here', false);
 
-		$tagAwareAdapter = $this->prophesize(TagAwareAdapterInterface::class);
-		$tagAwareAdapter->getItem('__SF2__example-item')->willReturn($cacheItemNoHit);
-		$tagAwareAdapter->save(\Prophecy\Argument::that(function ($cacheItemToSave) {
-			if (!$cacheItemToSave instanceof CacheItem) {
-				return false;
-			}
+        $tagAwareAdapter = $this->prophesize(TagAwareAdapterInterface::class);
+        $tagAwareAdapter->getItem('__SF2__example-item')->willReturn($cacheItemNoHit);
+        $tagAwareAdapter->save(
+            \Prophecy\Argument::that(
+                function ($cacheItemToSave) {
+                    if (!$cacheItemToSave instanceof CacheItem) {
+                        return false;
+                    }
 
-			// We need to inspect the expiry time via reflection as there seems
-			// to be no getter
-			$expiry = PHPUnit_Framework_Assert::readAttribute($cacheItemToSave, 'expiry');
-			$expected = time() + 900;
-			$toleranceInSeconds = 30;
-			PHPUnit_Framework_Assert::assertTrue(abs($expected - $expiry) < $toleranceInSeconds);
+                    // We need to inspect the expiry time via reflection as there seems
+                    // to be no getter
+                    $expiry = PHPUnit_Framework_Assert::readAttribute($cacheItemToSave, 'expiry');
+                    $expected = time() + 900;
+                    $toleranceInSeconds = 30;
+                    PHPUnit_Framework_Assert::assertTrue(abs($expected - $expiry) < $toleranceInSeconds);
 
-			// Similarly for tags, we inspect them with reflection
-			PHPUnit_Framework_Assert::assertAttributeEquals(
-				['tag1' => 'tag1', 'tag2' => 'tag2'],
-				'tags',
-				$cacheItemToSave
-			);
-			PHPUnit_Framework_Assert::assertEquals('example-item', $cacheItemToSave->getKey());
-			PHPUnit_Framework_Assert::assertEquals('The content to cache', $cacheItemToSave->get());
+                    // Similarly for tags, we inspect them with reflection
+                    PHPUnit_Framework_Assert::assertAttributeEquals(
+                        ['tag1' => 'tag1', 'tag2' => 'tag2'],
+                        'tags',
+                        $cacheItemToSave
+                    );
+                    PHPUnit_Framework_Assert::assertEquals('example-item', $cacheItemToSave->getKey());
+                    PHPUnit_Framework_Assert::assertEquals('The content to cache', $cacheItemToSave->get());
 
-			return true;
-		}))->shouldBeCalled();
+                    return true;
+                }
+            )
+        )->shouldBeCalled();
 
-		$cacheStrategy  = new SymfonyTaggedCacheStrategy($tagAwareAdapter->reveal());
-		$cacheExtension = new Extension($cacheStrategy);
+        $cacheStrategy = new SymfonyTaggedCacheStrategy($tagAwareAdapter->reveal());
+        $cacheExtension = new Extension($cacheStrategy);
 
-		$twig->addExtension($cacheExtension);
+        $twig->addExtension($cacheExtension);
 
-		$actualContent = $twig->render('index');
+        $actualContent = $twig->render('index');
 
-		$this->assertEquals($actualContent, 'The content to cache');
-	}
+        $this->assertEquals($actualContent, 'The content to cache');
+    }
 
-	/**
-	 * @return Closure
-	 */
-	private function createCacheCreateFunction() {
-		// This is copied from the sf2 cache library
-		return \Closure::bind(
-			function ($key, $value, $isHit) {
-				$item = new CacheItem();
-				$item->key = $key;
-				$item->value = $value;
-				$item->isHit = $isHit;
+    /**
+     * @return Closure
+     */
+    private function createCacheCreateFunction()
+    {
+        // This is copied from the sf2 cache library
+        return \Closure::bind(
+            function ($key, $value, $isHit) {
+                $item = new CacheItem();
+                $item->key = $key;
+                $item->value = $value;
+                $item->isHit = $isHit;
 
-				return $item;
-			},
-			null,
-			CacheItem::class
-		);
-	}
+                return $item;
+            },
+            null,
+            CacheItem::class
+        );
+    }
 }

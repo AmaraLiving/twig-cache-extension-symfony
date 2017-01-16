@@ -16,6 +16,7 @@ use Asm89\Twig\CacheExtension\Exception\BaseException;
 /**
  * InvalidValueException
  */
-class InvalidValueException extends BaseException {
+class InvalidValueException extends BaseException
+{
 
 }
