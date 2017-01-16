@@ -24,7 +24,7 @@ $twig->addExtension($cacheExtension);
 We can now use the twig view cache with tagged values:
 
 ```jinja
-{% cache 'example-item' {lifetime:900, tags: ['tag1', 'tag2']} %}
+{% cache 'example-item' {lifetime: 900, tags: ['tag1', 'tag2']} %}
     The content to cache
 {% endcache %}
 ```
