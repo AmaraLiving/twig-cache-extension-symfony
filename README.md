@@ -1,8 +1,8 @@
 Twig cache extension / Symfony cache bridge
 ===========================================
 
-Tiny library to bridge the tagged adapter from the Symfony2 cache component with 
-the twig cache extension.
+Tiny library to allow use of tagging cache items from the [Symfony2 cache component](https://github.com/symfony/cache) with 
+the [twig cache extension](https://github.com/asm89/twig-cache-extension).
 
 ```php
 <?php
@@ -28,4 +28,9 @@ We can now use the twig view cache with tagged values:
     The content to cache
 {% endcache %}
 ```
+
+# Why a separate library?
+
+The Twig cache extension supports a PSR cache, but it does not support tagging. This library exists to avoid introducing a Symfony dependency into the Twig cache extension.
+
   
